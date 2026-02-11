@@ -6,8 +6,8 @@ const querystring = require('querystring');
 const PORT = process.env.PORT || 3000;
 
 // --- PASTE YOUR SUPABASE DETAILS HERE ---
-const SUPABASE_URL = 'YOUR_PROJECT_ID.supabase.co'; 
-const SUPABASE_KEY = 'YOUR_ANON_KEY';
+const SUPABASE_URL = 'https://zaqoubqzgpbxgudupajf.supabase.co'; 
+const SUPABASE_KEY = 'sb_publishable_VbD4hiYacfYTdkAejP_ZFA_lohh7HpH';
 
 // Helper function to talk to Supabase
 function supabaseRequest(path, method, data, callback) {
