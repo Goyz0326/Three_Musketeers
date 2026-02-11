@@ -3,7 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const querystring = require('querystring');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // --- PASTE YOUR SUPABASE DETAILS HERE ---
 const SUPABASE_URL = 'zaqoubqzgpbxgudupajf.supabase.co'; 
@@ -73,4 +73,6 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(PORT, () => console.log(`Server live on ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is officially live on port ${PORT}`);
+});
