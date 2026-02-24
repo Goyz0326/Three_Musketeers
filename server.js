@@ -4,7 +4,7 @@ const fs = require('fs');
 const querystring = require('querystring');
 
 const PORT = process.env.PORT || 10000; // Required for Render
-const SUPABASE_URL = 'zaqoubqzgpbxgudupajf.supabase.co'; // No https://
+const SUPABASE_URL = 'ndjaicmrozhhqinpxhrq.supabase.co'; // No https://
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kamFpY21yb3poaHFpbnB4aHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDI0NjksImV4cCI6MjA4NzQ3ODQ2OX0.SvHivQJHjHMHfNBHBigRu7D6JsaLjDmpISWG1l0Ac6w';
 
 const server = http.createServer((req, res) => {
