@@ -3,8 +3,8 @@ const https = require('https');
 const fs = require('fs');
 const querystring = require('querystring');
 
-const PORT = process.env.PORT || 10000; // Required for Render
-const SUPABASE_URL = 'ndjaicmrozhhqinpxhrq.supabase.co'; // No https://
+const PORT = process.env.PORT || 10000; 
+const SUPABASE_URL = 'ndjaicmrozhhqinpxhrq.supabase.co'; 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kamFpY21yb3poaHFpbnB4aHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDI0NjksImV4cCI6MjA4NzQ3ODQ2OX0.SvHivQJHjHMHfNBHBigRu7D6JsaLjDmpISWG1l0Ac6w';
 
 const server = http.createServer((req, res) => {
@@ -18,14 +18,12 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // 2. Handle Registration (The "PHP" part)
+    // 2. Handle Registration
     if (req.method === 'POST' && req.url === '/register') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
             const userData = querystring.parse(body);
-            
-            // Send to Supabase
             const options = {
                 hostname: SUPABASE_URL,
                 path: '/rest/v1/users',
@@ -37,18 +35,65 @@ const server = http.createServer((req, res) => {
                     'Prefer': 'return=minimal'
                 }
             };
-
             const dbReq = https.request(options, (dbRes) => {
-                if (dbRes.statusCode >= 200 && dbRes.statusCode < 300) {
-                    res.writeHead(302, { 'Location': '/index.html' }); // Success!
-                    res.end();
-                } else {
-                    res.end("Database Error. Check Render Logs.");
-                }
+                dbRes.on('data', () => {}); // Consume data
+                dbRes.on('end', () => {
+                    if (dbRes.statusCode >= 200 && dbRes.statusCode < 300) {
+                        res.writeHead(302, { 'Location': '/index.html' });
+                        res.end();
+                    } else {
+                        res.end("Registration Failed. Status: " + dbRes.statusCode);
+                    }
+                });
             });
             dbReq.write(JSON.stringify(userData));
             dbReq.end();
         });
+        return;
+    }
+
+    // 3. NEW: Handle Login
+    if (req.method === 'POST' && req.url === '/login') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            const userData = querystring.parse(body);
+            // Construct the query to find the user
+            const path = `/rest/v1/users?username=eq.${userData.username}&password=eq.${userData.password}`;
+            
+            const options = {
+                hostname: SUPABASE_URL,
+                path: path,
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            };
+
+            const dbReq = https.request(options, (dbRes) => {
+                let resData = '';
+                dbRes.on('data', d => { resData += d; });
+                dbRes.on('end', () => {
+                    const users = JSON.parse(resData || '[]');
+                    if (users.length > 0) {
+                        // User found! Go to dashboard
+                        res.writeHead(302, { 'Location': '/dashboard.html' });
+                        res.end();
+                    } else {
+                        // No user found
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end("Invalid Login. <a href='/index.html'>Try again</a>");
+                    }
+                });
+            });
+            dbReq.on('error', (e) => {
+                res.writeHead(500);
+                res.end("Internal Server Error");
+            });
+            dbReq.end();
+        });
+        return;
     }
 });
 
