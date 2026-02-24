@@ -1,8 +1,6 @@
 {
-  "name": "study-robot-server",
+  "name": "study-robot",
   "version": "1.0.0",
-  "description": "Backend for ESP32 Study Robot",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   }
