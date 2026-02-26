@@ -19,15 +19,41 @@
 
 <div class="container">
     <h2>Create Account</h2>
-    <form action="/register" method="POST">
+    <form id="registerForm">
         <input type="text" name="username" placeholder="Choose Username" required>
         <input type="password" name="password" placeholder="Choose Password" required>
-        <button type="submit">Sign Up</button>
+        <button type="button" onclick="handleRegister()">Sign Up</button>
     </form>
     <div class="footer-link">
         Already have an account? <a href="index.html">Login here</a>
     </div>
 </div>
+
+<script>
+    async function handleRegister() {
+        const form = document.getElementById('registerForm');
+        // Convert form data into a format the server understands
+        const formData = new URLSearchParams(new FormData(form));
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                // Step C: Trigger the browser alert popup
+                alert("Registration Successful! Redirecting to login...");
+                window.location.href = "index.html"; 
+            } else {
+                alert("Registration Failed! Username might already exist.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Connection error. Is the server running?");
+        }
+    }
+</script>
 
 </body>
 </html>

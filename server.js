@@ -35,17 +35,27 @@ const server = http.createServer((req, res) => {
                     'Prefer': 'return=minimal'
                 }
             };
+
             const dbReq = https.request(options, (dbRes) => {
-                dbRes.on('data', () => {}); // Consume data
+                dbRes.on('data', () => {}); 
                 dbRes.on('end', () => {
+                    // Step D: Check if Supabase liked the data
                     if (dbRes.statusCode >= 200 && dbRes.statusCode < 300) {
-                        res.writeHead(302, { 'Location': '/index.html' });
+                        res.writeHead(200); // Success status code
                         res.end();
                     } else {
-                        res.end("Registration Failed. Status: " + dbRes.statusCode);
+                        res.writeHead(400); // Error status code
+                        res.end();
                     }
                 });
             });
+
+            dbReq.on('error', (e) => {
+                console.error(e);
+                res.writeHead(500); // Server error status code
+                res.end();
+            });
+
             dbReq.write(JSON.stringify(userData));
             dbReq.end();
         });
