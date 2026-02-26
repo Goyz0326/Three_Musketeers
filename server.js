@@ -87,13 +87,13 @@ const server = http.createServer((req, res) => {
                 dbRes.on('end', () => {
                     const users = JSON.parse(resData || '[]');
                     if (users.length > 0) {
-                        // User found! Go to dashboard
-                        res.writeHead(302, { 'Location': '/dashboard.html' });
+                        // User found! Send TRUE
+                        res.writeHead(200);
                         res.end();
                     } else {
-                        // No user found
-                        res.writeHead(200, { 'Content-Type': 'text/html' });
-                        res.end("Invalid Login. <a href='/index.html'>Try again</a>");
+                        // No user found. Send FALSE
+                        res.writeHead(401);
+                        res.end();
                     }
                 });
             });
