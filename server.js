@@ -10,13 +10,25 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const server = http.createServer((req, res) => {
     // 1. Serve your HTML files
     if (req.method === 'GET') {
-        let file = req.url === '/' ? './index.html' : `.${req.url}`;
-        fs.readFile(file, (err, data) => {
-            if (err) { res.writeHead(404); res.end("File Not Found"); }
-            else { res.writeHead(200, {'Content-Type': 'text/html'}); res.end(data); }
-        });
-        return;
+    let file = req.url === '/' ? './index.html' : `.${req.url}`;
+
+    // CHECK: Is the user trying to reach the dashboard?
+    if (file === './dashboard.html') {
+        const cookies = req.headers.cookie || "";
+        if (!cookies.includes("isLoggedIn=true")) {
+            // No wristband! Redirect them back to login.
+            res.writeHead(302, { 'Location': '/index.html' });
+            res.end();
+            return;
+        }
     }
+
+    fs.readFile(file, (err, data) => {
+        if (err) { res.writeHead(404); res.end("File Not Found"); }
+        else { res.writeHead(200, {'Content-Type': 'text/html'}); res.end(data); }
+    });
+    return;
+}
 
     // 2. Handle Registration
     if (req.method === 'POST' && req.url === '/register') {
@@ -87,12 +99,14 @@ const server = http.createServer((req, res) => {
                 dbRes.on('end', () => {
                     const users = JSON.parse(resData || '[]');
                     if (users.length > 0) {
-                        // User found! Send TRUE
-                        res.writeHead(200);
+                        // SUCCESS: Found the user. 
+                        // We send a "Set-Cookie" header so the browser remembers them.
+                        res.writeHead(200, {
+                            'Set-Cookie': `isLoggedIn=true; Path=/; HttpOnly; SameSite=Strict; Max-Age=3600`
+                        }); 
                         res.end();
                     } else {
-                        // No user found. Send FALSE
-                        res.writeHead(401);
+                        res.writeHead(401); 
                         res.end();
                     }
                 });
