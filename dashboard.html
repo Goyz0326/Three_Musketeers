@@ -2,13 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>StudyBot Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Bot Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f4f4f9; }
+        
+        /* Header Styling */
+        header { 
+            background: #333; color: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .logout-btn { 
+            background: #ff4d4d; color: white; border: none; 
+            padding: 8px 15px; border-radius: 5px; cursor: pointer; 
+        }
+
+        /* Robot Grid Styling */
+        .dashboard-container { 
+            display: flex; flex-wrap: wrap; gap: 20px; padding: 40px; 
+        }
+
+        .robot-box, .add-box {
+            width: 150px; height: 150px; border-radius: 15px;
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; font-weight: bold; cursor: pointer;
+            transition: transform 0.2s; background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .robot-box:hover, .add-box:hover { transform: scale(1.05); }
+
+        .robot-box { color: #333; border: 2px solid #ddd; }
+        
+        /* The "+" Add Button Styling */
+        .add-box { 
+            border: 2px dashed #999; color: #999; font-size: 3rem; 
+            background: transparent;
+        }
+    </style>
 </head>
 <body>
-    <h1>Study Robot Control Panel</h1>
-    <div id="status">Searching for ESP32-C3 on your network...</div>
-    <hr>
-    <button onclick="alert('Nodding!')">Test Nod</button>
-    <button onclick="alert('Shaking!')">Test Shake</button>
+
+<header>
+    <h1>Study Bot</h1>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+</header>
+
+<div class="dashboard-container" id="robotGrid">
+    <div class="add-box" onclick="addRobot()">+</div>
+</div>
+
+<script>
+    // 1. Handle Logout
+    async function handleLogout() {
+        const response = await fetch('/logout', { method: 'POST' });
+        if (response.ok) {
+            alert("Logged out successfully!");
+            window.location.href = "index.html";
+        }
+    }
+
+    // 2. Placeholder for Adding a Robot
+    function addRobot() {
+        alert("Enter your ESP32-C3 Device ID to link your Study Bot!");
+        // We will build the link-to-account logic later!
+    }
+
+    // 3. Logic to display connected robots (Placeholder for now)
+    const connectedRobots = []; // This will eventually come from your database
+
+    function loadRobots() {
+        const grid = document.getElementById('robotGrid');
+        connectedRobots.forEach((robot, index) => {
+            const box = document.createElement('div');
+            box.className = 'robot-box';
+            box.innerHTML = `<span>Robot ${index + 1}</span>`;
+            box.onclick = () => window.location.href = `control.html?id=${robot.id}`;
+            grid.insertBefore(box, grid.firstChild);
+        });
+    }
+
+    loadRobots();
+</script>
+
 </body>
 </html>

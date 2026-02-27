@@ -74,7 +74,7 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // 3. NEW: Handle Login
+    // 3. Handle Login
     if (req.method === 'POST' && req.url === '/login') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -117,6 +117,16 @@ const server = http.createServer((req, res) => {
             });
             dbReq.end();
         });
+        return;
+    }
+
+    //4. Handle Logout
+    if (req.method === 'POST' && req.url === '/logout') {
+        // We overwrite the cookie with an expired date to delete it
+        res.writeHead(200, {
+            'Set-Cookie': 'isLoggedIn=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly'
+        });
+        res.end();
         return;
     }
 });
