@@ -44,6 +44,21 @@
 </head>
 <body>
 
+<div id="robotModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:15px; width:400px; text-align:center;">
+        <h3>Link New Study Bot</h3>
+        <p>Connect your ESP32-C3 via USB and click below.</p>
+        
+        <button id="connectUsb" style="background:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+            Connect via USB
+        </button>
+        
+        <div id="statusMsg" style="margin-top:15px; color:#666; font-size:0.9rem;">Status: Waiting...</div>
+        
+        <button onclick="closeModal()" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; text-decoration:underline;">Cancel</button>
+    </div>
+</div>
+
 <header>
     <h1>Study Bot</h1>
     <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -65,20 +80,8 @@
 
     // 2. Placeholder for Adding a Robot
     function addRobot() {
-        <div id="robotModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
-            <div style="background:white; padding:30px; border-radius:15px; width:400px; text-align:center;">
-                <h3>Link New Study Bot</h3>
-                <p>Plug your ESP32-C3 into USB and click below.</p>
-                
-                <button id="connectUsb" class="robot-btn" style="background:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">
-                    Connect via USB
-                </button>
-                
-                <div id="statusMsg" style="margin-top:15px; color:#666; font-size:0.9rem;">Status: Waiting for connection...</div>
-                
-                <button onclick="closeModal()" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; text-decoration:underline;">Cancel</button>
-            </div>
-        </div>
+        alert("Enter your ESP32-C3 Device ID to link your Study Bot!");
+        // We will build the link-to-account logic later!
     }
 
     // 3. Logic to display connected robots (Placeholder for now)
