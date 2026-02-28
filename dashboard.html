@@ -78,10 +78,75 @@
         }
     }
 
-    // 2. Placeholder for Adding a Robot
+    // 2. dding a Robot
+    let port;
+    let reader;
+
+    // Updated Step 2: Open the Modal
     function addRobot() {
-        alert("Enter your ESP32-C3 Device ID to link your Study Bot!");
-        // We will build the link-to-account logic later!
+        document.getElementById('robotModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('robotModal').style.display = 'none';
+        if (port) {
+            port.close();
+            port = null;
+        }
+    }
+
+    // New: Web Serial Handshake Logic
+    document.getElementById('connectUsb').addEventListener('click', async () => {
+        const status = document.getElementById('statusMsg');
+        
+        if (!("serial" in navigator)) {
+            alert("Your browser does not support Web Serial. Please use Chrome or Edge.");
+            return;
+        }
+
+        try {
+            // Step A: Request the USB Port
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 }); 
+            
+            status.innerText = "Status: Connected! Asking Robot for ID...";
+            status.style.color = "green";
+
+            // Step B: Send the "Identify" command ('I') to the ESP32
+            const encoder = new TextEncoder();
+            const writer = port.writable.getWriter();
+            await writer.write(encoder.encode("I")); 
+            writer.releaseLock();
+
+            // Step C: Listen for the MAC Address response
+            readFromRobot();
+            
+        } catch (err) {
+            console.error(err);
+            status.innerText = "Status: Connection Failed.";
+            status.style.color = "red";
+        }
+    });
+
+    async function readFromRobot() {
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        reader = textDecoder.readable.getReader();
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+                console.log("ESP32 says:", value);
+                if (value.includes("MAC:")) {
+                    const mac = value.split("MAC:")[1].trim();
+                    alert("Robot Found! MAC Address: " + mac);
+                    // We will call the WiFi form next
+                    showSetupForm(mac); 
+                    break;
+                }
+            }
+        }
     }
 
     // 3. Logic to display connected robots (Placeholder for now)
