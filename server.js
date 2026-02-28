@@ -99,10 +99,15 @@ const server = http.createServer((req, res) => {
                 dbRes.on('end', () => {
                     const users = JSON.parse(resData || '[]');
                     if (users.length > 0) {
-                        // SUCCESS: Found the user. 
-                        // We send a "Set-Cookie" header so the browser remembers them.
+                        const loggedInUser = users[0]; // This is the user object from Supabase
+                        const userId = loggedInUser.id; // Get the specific ID
+
+                        // SUCCESS: Send a cookie containing the specific User ID
                         res.writeHead(200, {
-                            'Set-Cookie': `isLoggedIn=true; Path=/; HttpOnly; SameSite=Strict; Max-Age=3600`
+                            'Set-Cookie': [
+                                `isLoggedIn=true; Path=/; HttpOnly; SameSite=Strict; Max-Age=3600`,
+                                `userId=${userId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=3600`
+                            ]
                         }); 
                         res.end();
                     } else {
@@ -122,9 +127,12 @@ const server = http.createServer((req, res) => {
 
     //4. Handle Logout
     if (req.method === 'POST' && req.url === '/logout') {
-        // We overwrite the cookie with an expired date to delete it
+        // We send an array to clear both the login flag AND the user ID
         res.writeHead(200, {
-            'Set-Cookie': 'isLoggedIn=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly'
+            'Set-Cookie': [
+                'isLoggedIn=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Strict',
+                'userId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Strict'
+            ]
         });
         res.end();
         return;
