@@ -78,12 +78,14 @@
         }
     }
 
-    // 2. dding a Robot
+    // 2. Adding a Robot
     let port;
     let reader;
 
     // Updated Step 2: Open the Modal
     function addRobot() {
+        status.innerText = "Status: Waiting...";
+        status.style.color = "#666";
         document.getElementById('robotModal').style.display = 'flex';
     }
 
