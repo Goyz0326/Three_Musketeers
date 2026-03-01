@@ -187,7 +187,7 @@
                 console.log("Current Buffer:", buffer);
 
                 if (buffer.includes("MAC:")) {
-                    clearInterval(intervalId); // STOP shouting "I"
+                    clearInterval(idInterval); // STOP shouting "I"
                     const mac = buffer.split("MAC:")[1].trim().substring(0, 17); // Get exactly the MAC
                     alert("Robot Found! MAC: " + mac);
                     showSetupForm(mac);
