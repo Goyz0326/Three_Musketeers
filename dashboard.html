@@ -131,6 +131,8 @@
     }
 
     // New: Web Serial Handshake Logic
+    let idInterval;
+
     document.getElementById('connectUsb').addEventListener('click', async () => {
         const status = document.getElementById('statusMsg');
         
@@ -151,7 +153,7 @@
             status.style.color = "green";
 
             // Step B: Send the "Identify" command ('I') to the ESP32
-            const idInterval = setInterval(async () => {
+            idInterval = setInterval(async () => {
                 if (!port || !port.writable) return;
                 const encoder = new TextEncoder();
                 const writer = port.writable.getWriter();
