@@ -172,7 +172,7 @@
         }
     });
 
-    async function readFromRobot(intervalId) {
+    async function readFromRobot(idInterval) {
         const textDecoder = new TextDecoderStream();
         port.readable.pipeTo(textDecoder.writable);
         reader = textDecoder.readable.getReader();
@@ -206,39 +206,51 @@
     }
 
     async function saveAndFlash() {
+        console.log("Button Clicked!"); // If this doesn't show, the button isn't calling the function
+
         const name = document.getElementById('robotName').value;
         const ssid = document.getElementById('wifiSSID').value;
         const pass = document.getElementById('wifiPass').value;
         const mac = document.getElementById('robotMac').value;
+
+        console.log("Data gathered:", { name, ssid, mac });
 
         if (!name || !ssid || !pass) {
             alert("Please fill in all fields!");
             return;
         }
 
-        // 1. Send WiFi credentials to the ESP32 via USB
-        const wifiData = `WIFI:${ssid},${pass}\n`;
-        const encoder = new TextEncoder();
-        const writer = port.writable.getWriter();
-        await writer.write(encoder.encode(wifiData));
-        writer.releaseLock();
+        try {
+            // 1. Send WiFi credentials to the ESP32 via USB
+            if (port && port.writable) {
+                const wifiData = `WIFI:${ssid},${pass}\n`;
+                const encoder = new TextEncoder();
+                const writer = port.writable.getWriter();
+                await writer.write(encoder.encode(wifiData));
+                writer.releaseLock(); 
+                console.log("WiFi credentials sent to ESP32 over USB");
+            }
 
-        // 2. Send Data to your Server to save in Supabase
-        const response = await fetch('/add-robot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                robot_name: name,
-                robot_address: mac
-                // The server will get the userId from the cookie!
-            })
-        });
+            // 2. Send Data to your Render Server
+            console.log("Attempting to save to database...");
+            const response = await fetch('/add-robot', {
+                method: 'POST',
+                body: new URLSearchParams({
+                    robot_name: name,
+                    robot_address: mac
+                })
+            });
 
-        if (response.ok) {
-            alert("Success! Robot linked and WiFi settings sent.");
-            location.reload(); // Refresh to see the new robot box
-        } else {
-            alert("Failed to save robot to database.");
+            if (response.ok) {
+                console.log("Server response OK");
+                alert("Success! Robot linked.");
+                location.reload(); 
+            } else {
+                console.error("Server responded with error:", response.status);
+                alert("Database Error: " + response.status);
+            }
+        } catch (err) {
+            console.error("Caught JavaScript Error:", err);
         }
     }
 
