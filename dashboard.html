@@ -151,10 +151,14 @@
             status.style.color = "green";
 
             // Step B: Send the "Identify" command ('I') to the ESP32
-            const encoder = new TextEncoder();
-            const writer = port.writable.getWriter();
-            await writer.write(encoder.encode("I")); 
-            writer.releaseLock();
+            const idInterval = setInterval(async () => {
+                if (!port || !port.writable) return;
+                const encoder = new TextEncoder();
+                const writer = port.writable.getWriter();
+                await writer.write(encoder.encode("I\n")); // Added \n for clarity
+                writer.releaseLock();
+                console.log("Sent 'I' to robot...");
+            }, 1000);
 
             // Step C: Listen for the MAC Address response
             readFromRobot();
