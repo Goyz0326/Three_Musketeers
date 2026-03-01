@@ -170,21 +170,25 @@
         }
     });
 
-    async function readFromRobot() {
+    async function readFromRobot(intervalId) {
         const textDecoder = new TextDecoderStream();
-        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        port.readable.pipeTo(textDecoder.writable);
         reader = textDecoder.readable.getReader();
+
+        let buffer = ""; // Add a buffer to collect pieces of text
 
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
             if (value) {
-                console.log("ESP32 says:", value);
-                if (value.includes("MAC:")) {
-                    const mac = value.split("MAC:")[1].trim();
-                    alert("Robot Found! MAC Address: " + mac);
-                    // We will call the WiFi form next
-                    showSetupForm(mac); 
+                buffer += value; // Keep adding new text to the buffer
+                console.log("Current Buffer:", buffer);
+
+                if (buffer.includes("MAC:")) {
+                    clearInterval(intervalId); // STOP shouting "I"
+                    const mac = buffer.split("MAC:")[1].trim().substring(0, 17); // Get exactly the MAC
+                    alert("Robot Found! MAC: " + mac);
+                    showSetupForm(mac);
                     break;
                 }
             }
