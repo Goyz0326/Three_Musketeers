@@ -7,6 +7,21 @@ const PORT = process.env.PORT || 10000;
 const SUPABASE_URL = 'ndjaicmrozhhqinpxhrq.supabase.co'; 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kamFpY21yb3poaHFpbnB4aHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDI0NjksImV4cCI6MjA4NzQ3ODQ2OX0.SvHivQJHjHMHfNBHBigRu7D6JsaLjDmpISWG1l0Ac6w';
 
+// Helper to turn the cookie string into an easy-to-use object
+function parseCookies(cookieHeader) {
+    const list = {};
+    if (!cookieHeader) return list;
+    cookieHeader.split(';').forEach(cookie => {
+        let [name, ...rest] = cookie.split('=');
+        name = name.trim();
+        if (!name) return;
+        const value = rest.join('=').trim();
+        if (!value) return;
+        list[name] = decodeURIComponent(value);
+    });
+    return list;
+}
+
 const server = http.createServer((req, res) => {
     // 1. Serve your HTML files
     if (req.method === 'GET') {
@@ -135,6 +150,66 @@ const server = http.createServer((req, res) => {
             ]
         });
         res.end();
+        return;
+    }
+
+    //5. Send Data to Database to add robot
+    if (req.method === 'POST' && req.url === '/add-robot') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            const robotData = querystring.parse(body);
+            
+            // 1. Get the userId from the cookies
+            const cookies = parseCookies(req.headers.cookie);
+            const currentUserId = cookies.userId;
+
+            if (!currentUserId) {
+                res.writeHead(401);
+                res.end("Unauthorized: Please log in again.");
+                return;
+            }
+
+            // 2. Prepare the data for Supabase
+            const payload = JSON.stringify({
+                robot_name: robotData.robot_name,
+                robot_address: robotData.robot_address,
+                user_id: currentUserId // This links the robot to the logged-in user!
+            });
+
+            const options = {
+                hostname: SUPABASE_URL,
+                path: '/rest/v1/robots',
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                }
+            };
+
+            const dbReq = https.request(options, (dbRes) => {
+                dbRes.on('end', () => {
+                    if (dbRes.statusCode >= 200 && dbRes.statusCode < 300) {
+                        res.writeHead(200);
+                        res.end("Success");
+                    } else {
+                        console.error("Supabase Error:", dbRes.statusCode);
+                        res.writeHead(400);
+                        res.end("Database Error");
+                    }
+                });
+            });
+
+            dbReq.on('error', (e) => {
+                res.writeHead(500);
+                res.end("Server Error");
+            });
+
+            dbReq.write(payload);
+            dbReq.end();
+        });
         return;
     }
 });
