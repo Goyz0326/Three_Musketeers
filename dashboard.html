@@ -46,33 +46,37 @@
 
 <div id="robotModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
     <div style="background:white; padding:30px; border-radius:15px; width:400px; text-align:center;">
-        <h3>Link New Study Bot</h3>
-        <p>Connect your ESP32-C3 via USB and click below.</p>
         
-        <button id="connectUsb" style="background:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
-            Connect via USB
-        </button>
-        
-        <div id="statusMsg" style="margin-top:15px; color:#666; font-size:0.9rem;">Status: Waiting...</div>
+        <div id="connectionStage">
+            <h3>Link New Study Bot</h3>
+            <p>Connect your ESP32-C3 via USB and click below.</p>
+            <button id="connectUsb" style="background:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+                Connect via USB
+            </button>
+            <div id="statusMsg" style="margin-top:15px; color:#666; font-size:0.9rem;">Status: Waiting...</div>
+        </div>
+
+        <div id="setupForm" style="display:none; margin-top:10px; text-align:left;">
+            <h3 style="text-align:center;">Robot Found!</h3>
+            <p id="macDisplay" style="text-align:center; color:green; font-weight:bold;"></p>
+            <hr>
+            <label>Robot Name:</label>
+            <input type="text" id="robotName" placeholder="e.g. Study Buddy" style="width:100%; margin-bottom:10px; padding:8px; border: 1px solid #ccc; border-radius: 4px;">
+            
+            <label>WiFi Name (SSID):</label>
+            <input type="text" id="wifiSSID" placeholder="Your WiFi Name" style="width:100%; margin-bottom:10px; padding:8px; border: 1px solid #ccc; border-radius: 4px;">
+            
+            <label>WiFi Password:</label>
+            <input type="password" id="wifiPass" placeholder="Your WiFi Password" style="width:100%; margin-bottom:15px; padding:8px; border: 1px solid #ccc; border-radius: 4px;">
+            
+            <input type="hidden" id="robotMac">
+            <button onclick="saveAndFlash()" style="width:100%; background:#2196F3; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+                Save & Setup Robot
+            </button>
+        </div>
         
         <button onclick="closeModal()" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; text-decoration:underline;">Cancel</button>
     </div>
-</div>
-
-<div id="setupForm" style="display:none; margin-top:20px; text-align:left;">
-    <hr>
-    <label>Robot Name:</label>
-    <input type="text" id="robotName" placeholder="e.g. Study Buddy" style="width:100%; margin-bottom:10px; padding:8px;">
-    
-    <label>WiFi Name (SSID):</label>
-    <input type="text" id="wifiSSID" placeholder="Your WiFi Name" style="width:100%; margin-bottom:10px; padding:8px;">
-    
-    <label>WiFi Password:</label>
-    <input type="password" id="wifiPass" placeholder="Your WiFi Password" style="width:100%; margin-bottom:15px; padding:8px;">
-    
-    <input type="hidden" id="robotMac"> <button onclick="saveAndFlash()" style="width:100%; background:#2196F3; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
-        Save & Setup Robot
-    </button>
 </div>
 
 <header>
@@ -103,8 +107,23 @@
         document.getElementById('robotModal').style.display = 'flex';
     }
 
+    function showSetupForm(mac) {
+        // 1. Hide the first stage (button & status)
+        document.getElementById('connectionStage').style.display = 'none';
+        
+        // 2. Fill the display data
+        document.getElementById('macDisplay').innerText = "MAC: " + mac;
+        document.getElementById('robotMac').value = mac;
+        
+        // 3. Reveal the form
+        document.getElementById('setupForm').style.display = 'block';
+    }
+
+    // Ensure closeModal resets the view for the next time
     function closeModal() {
         document.getElementById('robotModal').style.display = 'none';
+        document.getElementById('connectionStage').style.display = 'block'; // Reset to stage 1
+        document.getElementById('setupForm').style.display = 'none';      // Hide stage 2
         if (port) {
             port.close();
             port = null;
