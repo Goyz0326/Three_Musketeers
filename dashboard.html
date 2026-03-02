@@ -231,18 +231,48 @@
     }
 
     // 8. Displaying Robots
-    const connectedRobots = []; 
-    function loadRobots() {
+    async function loadRobots() {
         const grid = document.getElementById('robotGrid');
-        connectedRobots.forEach((robot, index) => {
-            const box = document.createElement('div');
-            box.className = 'robot-box';
-            box.innerHTML = `<span>${robot.robot_name || 'Robot ' + (index + 1)}</span>`;
-            box.onclick = () => window.location.href = `control.html?id=${robot.id}`;
-            grid.insertBefore(box, grid.firstChild);
-        });
+        
+        try {
+            const response = await fetch('/get-robots');
+            if (!response.ok) throw new Error("Failed to fetch robots");
+            
+            const robots = await response.json();
+
+            // Clear only the existing robot boxes, but keep the "+" add-box
+            // We do this by removing everything and then re-adding the "+" box at the end
+            grid.innerHTML = ''; 
+
+            robots.forEach((robot) => {
+                const box = document.createElement('div');
+                box.className = 'robot-box';
+                // Display the name you saved in the database!
+                box.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🤖</div>
+                    <span>${robot.robot_name}</span>
+                    <small style="font-size: 0.7rem; color: #888;">${robot.robot_address}</small>
+                `;
+                
+                // When clicked, go to the control page for THIS specific robot
+                box.onclick = () => window.location.href = `control.html?id=${robot.id}`;
+                
+                grid.appendChild(box);
+            });
+
+            // Always add the "+" box at the end
+            const addBox = document.createElement('div');
+            addBox.className = 'add-box';
+            addBox.innerHTML = '+';
+            addBox.onclick = addRobot;
+            grid.appendChild(addBox);
+
+        } catch (err) {
+            console.error("Load Error:", err);
+        }
     }
 
+    // Call the function when the page loads
     loadRobots();
 </script>
 

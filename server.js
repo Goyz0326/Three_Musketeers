@@ -216,8 +216,47 @@ const server = http.createServer((req, res) => {
             dbReq.end();
         });
         return;
+        }
+
+        if (req.method === 'GET' && req.url === '/get-robots') {
+        // 1. Get the userId from the cookies
+        const cookies = parseCookies(req.headers.cookie);
+        const currentUserId = cookies.userId;
+
+        if (!currentUserId) {
+            res.writeHead(401);
+            res.end(JSON.stringify([]));
+            return;
+        }
+
+        // 2. Ask Supabase for robots matching this user_id
+        const options = {
+            hostname: SUPABASE_URL,
+            path: `/rest/v1/Robots?user_id=eq.${currentUserId}&select=*`,
+            method: 'GET',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        };
+
+        const dbReq = https.request(options, (dbRes) => {
+            let resData = '';
+            dbRes.on('data', d => { resData += d; });
+            dbRes.on('end', () => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(resData); // Send the list of robots back to the dashboard
+            });
+        });
+
+        dbReq.on('error', (e) => {
+            res.writeHead(500);
+            res.end(JSON.stringify([]));
+        });
+        dbReq.end();
+        return;
     }
-});
+    });
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Study Robot Server running on port ${PORT}`);
