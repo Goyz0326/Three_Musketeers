@@ -220,7 +220,9 @@ const server = http.createServer((req, res) => {
 
         if (req.method === 'GET' && req.url === '/get-robots') {
         // 1. Get the userId from the cookies
+        console.log("Checking cookies:", req.headers.cookie);
         const cookies = parseCookies(req.headers.cookie);
+        console.log("Found User ID:", cookies.userId);
         const currentUserId = cookies.userId;
 
         if (!currentUserId) {
