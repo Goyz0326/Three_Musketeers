@@ -190,12 +190,17 @@ const server = http.createServer((req, res) => {
             };
 
             const dbReq = https.request(options, (dbRes) => {
+                // CRITICAL: You must listen for 'data' even if you don't use it!
+                dbRes.on('data', (d) => {
+                    // This just drains the response so 'end' can trigger
+                });
+
                 dbRes.on('end', () => {
+                    console.log("Supabase Status:", dbRes.statusCode); // Check your logs!
                     if (dbRes.statusCode >= 200 && dbRes.statusCode < 300) {
                         res.writeHead(200);
                         res.end("Success");
                     } else {
-                        console.error("Supabase Error:", dbRes.statusCode);
                         res.writeHead(400);
                         res.end("Database Error");
                     }
