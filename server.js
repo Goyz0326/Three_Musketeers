@@ -271,19 +271,21 @@ const server = http.createServer((req, res) => {
 
     // 1. Serve your HTML files
     if (req.method === 'GET') {
-        let file = req.url === '/' ? './index.html' : `.${req.url}`;
+        // 1. Clean the URL (remove query parameters like ?id=123)
+        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+        let filePath = parsedUrl.pathname === '/' ? './index.html' : `.${parsedUrl.pathname}`;
 
-        // CHECK: Is the user trying to reach the dashboard?
-        if (file === './dashboard.html') {
-            const cookies = req.headers.cookie || "";
-            if (!cookies.includes("isLoggedIn=true")) {
-                // No wristband! Redirect them back to login.
+        // 2. Security Check: Only allow access to dashboard/control if logged in
+        if (filePath === './dashboard.html' || filePath === './control.html') {
+            const cookies = parseCookies(req.headers.cookie);
+            if (!cookies.isLoggedIn) {
                 res.writeHead(302, { 'Location': '/index.html' });
                 res.end();
                 return;
             }
         }
 
+        // 3. Serve the file
         fs.readFile(filePath, (err, data) => {
             if (err) {
                 console.error("File Error:", filePath);
