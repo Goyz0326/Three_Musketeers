@@ -284,9 +284,20 @@ const server = http.createServer((req, res) => {
             }
         }
 
-        fs.readFile(file, (err, data) => {
-            if (err) { res.writeHead(404); res.end("File Not Found"); }
-            else { res.writeHead(200, {'Content-Type': 'text/html'}); res.end(data); }
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                console.error("File Error:", filePath);
+                res.writeHead(404);
+                res.end("File Not Found");
+            } else {
+                // Set the correct content type (important for CSS/JS)
+                let contentType = 'text/html';
+                if (filePath.endsWith('.css')) contentType = 'text/css';
+                if (filePath.endsWith('.js')) contentType = 'text/javascript';
+
+                res.writeHead(200, { 'Content-Type': contentType });
+                res.end(data);
+            }
         });
         return;
     }
