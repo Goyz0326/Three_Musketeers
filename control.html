@@ -89,4 +89,15 @@
             const ssid = document.getElementById('editSSID').value;
             const pass = document.getElementById('editPass').value;
             const writer = port.writable.getWriter();
-            await writer.write(new TextEncoder().encode(`WIFI:${ssid},${pass
+            await writer.write(new TextEncoder().encode(`WIFI:${ssid},${pass}\n`));
+            writer.releaseLock();
+            alert("WiFi Sent!");
+        } catch (err) {
+            alert("USB Connection Failed.");
+        }
+    }
+
+    loadRobot();
+</script>
+</body>
+</html>
