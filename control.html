@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBot Control</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; margin: 0; }
+        header { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .btn-settings { background: #555; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        
+        .main-content { padding: 40px; text-align: center; }
+        .robot-status { margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; color: #4CAF50; }
+
+        /* Settings Modal */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; }
+        .modal-content { background:white; padding:30px; border-radius:15px; width:350px; text-align:left; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 id="robotHeader">Robot Name</h1>
+    <button class="btn-settings" onclick="openSettings()">⚙️ Settings</button>
+</header>
+
+<div class="main-content">
+    <div class="robot-status">Online</div>
+    <div style="border: 2px dashed #ccc; padding: 100px; border-radius: 20px; color: #999;">
+        [ Control Interface Coming Soon ]
+    </div>
+    <br>
+    <a href="dashboard.html" style="color: #888;">← Back to All Robots</a>
+</div>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>Robot Settings</h3>
+        <p id="macLabel" style="font-size: 0.8rem; color: #666;"></p>
+        
+        <label>Rename Robot:</label>
+        <input type="text" id="editName">
+        <button class="btn-action" style="background: #4CAF50; color: white;" onclick="saveName()">Update Name</button>
+        
+        <hr style="margin: 20px 0;">
+        
+        <label>Update WiFi (Requires USB):</label>
+        <input type="text" id="editSSID" placeholder="WiFi Name">
+        <input type="password" id="editPass" placeholder="WiFi Password">
+        <button class="btn-action" style="background: #2196F3; color: white;" onclick="updateWifi()">Flash WiFi via USB</button>
+        
+        <button onclick="closeSettings()" style="width:100%; background:none; border:none; color:#999; margin-top:15px; cursor:pointer; text-decoration:underline;">Close</button>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const robotId = urlParams.get('id');
+
+    async function loadRobot() {
+        const response = await fetch(`/get-single-robot?id=${robotId}`);
+        const robot = await response.json();
+        document.getElementById('robotHeader').innerText = robot.robot_name;
+        document.getElementById('editName').value = robot.robot_name;
+        document.getElementById('macLabel').innerText = "MAC: " + robot.robot_address;
+    }
+
+    function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+    async function saveName() {
+        const newName = document.getElementById('editName').value;
+        const response = await fetch('/update-robot-name', {
+            method: 'POST',
+            body: new URLSearchParams({ id: robotId, name: newName })
+        });
+        if (response.ok) {
+            alert("Name updated!");
+            location.reload();
+        }
+    }
+
+    async function updateWifi() {
+        try {
+            const port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+            const ssid = document.getElementById('editSSID').value;
+            const pass = document.getElementById('editPass').value;
+            const writer = port.writable.getWriter();
+            await writer.write(new TextEncoder().encode(`WIFI:${ssid},${pass

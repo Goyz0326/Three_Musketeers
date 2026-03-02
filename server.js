@@ -237,6 +237,38 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    //6. UPDATE NAME ROUTE
+    if (req.method === 'POST' && req.url === '/update-robot-name') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            const data = querystring.parse(body);
+            const payload = JSON.stringify({ robot_name: data.name });
+
+            const options = {
+                hostname: SUPABASE_URL,
+                path: `/rest/v1/Robots?id=eq.${data.id}`,
+                method: 'PATCH', // We are patching an existing record
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                }
+            };
+
+            const dbReq = https.request(options, (dbRes) => {
+                dbRes.on('data', () => {}); // Consume data
+                dbRes.on('end', () => {
+                    res.writeHead(dbRes.statusCode >= 200 && dbRes.statusCode < 300 ? 200 : 400);
+                    res.end();
+                });
+            });
+            dbReq.write(payload);
+            dbReq.end();
+        });
+    }
+
     // 1. Serve your HTML files
     if (req.method === 'GET') {
         let file = req.url === '/' ? './index.html' : `.${req.url}`;
