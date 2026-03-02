@@ -179,7 +179,7 @@ const server = http.createServer((req, res) => {
 
             const options = {
                 hostname: SUPABASE_URL,
-                path: '/rest/v1/robots',
+                path: '/rest/v1/Robots',
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_KEY,
