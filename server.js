@@ -23,28 +23,6 @@ function parseCookies(cookieHeader) {
 }
 
 const server = http.createServer((req, res) => {
-    // 1. Serve your HTML files
-    if (req.method === 'GET') {
-    let file = req.url === '/' ? './index.html' : `.${req.url}`;
-
-    // CHECK: Is the user trying to reach the dashboard?
-    if (file === './dashboard.html') {
-        const cookies = req.headers.cookie || "";
-        if (!cookies.includes("isLoggedIn=true")) {
-            // No wristband! Redirect them back to login.
-            res.writeHead(302, { 'Location': '/index.html' });
-            res.end();
-            return;
-        }
-    }
-
-    fs.readFile(file, (err, data) => {
-        if (err) { res.writeHead(404); res.end("File Not Found"); }
-        else { res.writeHead(200, {'Content-Type': 'text/html'}); res.end(data); }
-    });
-    return;
-}
-
     // 2. Handle Registration
     if (req.method === 'POST' && req.url === '/register') {
         let body = '';
@@ -216,9 +194,9 @@ const server = http.createServer((req, res) => {
             dbReq.end();
         });
         return;
-        }
+    }
 
-        if (req.method === 'GET' && req.url === '/get-robots') {
+    if (req.method === 'GET' && req.url === '/get-robots') {
         // 1. Get the userId from the cookies
         console.log("Checking cookies:", req.headers.cookie);
         const cookies = parseCookies(req.headers.cookie);
@@ -258,7 +236,29 @@ const server = http.createServer((req, res) => {
         dbReq.end();
         return;
     }
-    });
+
+    // 1. Serve your HTML files
+    if (req.method === 'GET') {
+        let file = req.url === '/' ? './index.html' : `.${req.url}`;
+
+        // CHECK: Is the user trying to reach the dashboard?
+        if (file === './dashboard.html') {
+            const cookies = req.headers.cookie || "";
+            if (!cookies.includes("isLoggedIn=true")) {
+                // No wristband! Redirect them back to login.
+                res.writeHead(302, { 'Location': '/index.html' });
+                res.end();
+                return;
+            }
+        }
+
+        fs.readFile(file, (err, data) => {
+            if (err) { res.writeHead(404); res.end("File Not Found"); }
+            else { res.writeHead(200, {'Content-Type': 'text/html'}); res.end(data); }
+        });
+        return;
+    }
+});
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Study Robot Server running on port ${PORT}`);
