@@ -237,6 +237,15 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.method === 'GET' && req.url.startsWith('/ping')) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const mac = url.searchParams.get('mac');
+        
+        // Update Supabase with current time
+        const payload = JSON.stringify({ last_seen: new Date().toISOString() });
+        // ... use PATCH logic to update Robots where robot_address == mac ...
+    }
+
     //6. UPDATE NAME ROUTE
     if (req.method === 'POST' && req.url === '/update-robot-name') {
         let body = '';
