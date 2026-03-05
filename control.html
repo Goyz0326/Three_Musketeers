@@ -58,13 +58,27 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const robotId = urlParams.get('id');
+    let statusInterval;
 
-    async function loadRobot() {
-        const response = await fetch(`/get-single-robot?id=${robotId}`);
-        const robot = await response.json();
-        document.getElementById('robotHeader').innerText = robot.robot_name;
-        document.getElementById('editName').value = robot.robot_name;
-        document.getElementById('macLabel').innerText = "MAC: " + robot.robot_address;
+   async function loadRobot() {
+        try {
+            const response = await fetch(`/get-single-robot?id=${robotId}`);
+            if (!response.ok) throw new Error("Could not fetch robot data");
+            
+            const robot = await response.json();
+            
+            // 1. Update UI Elements
+            document.getElementById('robotHeader').innerText = robot.robot_name;
+            document.getElementById('editName').value = robot.robot_name;
+            document.getElementById('macLabel').innerText = "MAC: " + robot.robot_address;
+
+            // 2. Check Online/Offline Status
+            updateOnlineStatus(robot.last_seen);
+            
+        } catch (err) {
+            console.error("Load Error:", err);
+            setStatus("Error", "#ff4d4d");
+        }
     }
 
     function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
@@ -97,44 +111,41 @@
         }
     }
 
-    loadRobot();
+    function updateOnlineStatus(lastSeenISO) {
+        if (!lastSeenISO) {
+            setStatus("Offline", "#999");
+            return;
+        }
 
-    function setStatus(status, color) {
+        const lastSeen = new Date(lastSeenISO);
+        const now = new Date();
+        
+        // Calculate difference in seconds
+        const diffInSeconds = Math.floor((now - lastSeen) / 1000);
+        
+        // Since the robot pings every 30s, we give it a 60s "grace period"
         const statusEl = document.querySelector('.robot-status');
-        statusEl.innerText = status;
+        if (diffInSeconds < 60) {
+            setStatus("● Online", "#4CAF50");
+        } else {
+            setStatus("○ Offline", "#ff4d4d");
+        }
+    }
+
+    function setStatus(text, color) {
+        const statusEl = document.querySelector('.robot-status');
+        statusEl.innerText = text;
         statusEl.style.color = color;
     }
 
-    async function connectUSB() {
-        try {
-            port = await navigator.serial.requestPort();
-            await port.open({ baudRate: 115200 });
-            
-            // If we get here, it's connected!
-            setStatus("Online (USB)", "#4CAF50");
-
-            // Listen for disconnect (if the user pulls the cable)
-            navigator.serial.addEventListener("disconnect", () => {
-                setStatus("Offline", "#ff4d4d");
-            });
-        } catch (err) {
-            setStatus("Offline", "#ff4d4d");
-        }
+    // 3. Start the Auto-Refresh Loop
+    function startStatusMonitor() {
+        // Refresh data every 10 seconds
+        statusInterval = setInterval(loadRobot, 10000);
     }
 
-    async function checkOnlineStatus(robot) {
-        const lastSeen = new Date(robot.last_seen);
-        const now = new Date();
-        
-        // If the last ping was less than 90 seconds ago, show Online
-        const diff = (now - lastSeen) / 1000; 
-        
-        if (diff < 90) {
-            setStatus("Online (Cloud)", "#4CAF50");
-        } else {
-            setStatus("Offline", "#ff4d4d");
-        }
-    }
+    loadRobot();
+    startStatusMonitor();
 </script>
 </body>
 </html>
