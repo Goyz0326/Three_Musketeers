@@ -23,6 +23,45 @@ function parseCookies(cookieHeader) {
 }
 
 const server = http.createServer((req, res) => {
+    if (req.method === 'GET' && req.url.startsWith('/get-single-robot')) {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+        const id = parsedUrl.searchParams.get('id');
+
+        console.log("Server searching for Robot ID:", id);
+
+        const options = {
+            hostname: SUPABASE_URL,
+            path: `/rest/v1/Robots?id=eq.${id}&select=*`, // Match your 'Robots' table casing
+            method: 'GET',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        };
+
+        const dbReq = https.request(options, (dbRes) => {
+            let resData = '';
+            dbRes.on('data', d => { resData += d; });
+            dbRes.on('end', () => {
+                try {
+                    const robots = JSON.parse(resData || '[]');
+                    if (robots.length > 0) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(robots[0]));
+                    } else {
+                        res.writeHead(404);
+                        res.end(JSON.stringify({ error: "Robot not found" }));
+                    }
+                } catch (e) {
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: "Data parse error" }));
+                }
+            });
+        });
+        dbReq.end();
+        return; // Don't forget this!
+    }
+
     // 2. Handle Registration
     if (req.method === 'POST' && req.url === '/register') {
         let body = '';
