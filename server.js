@@ -237,15 +237,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (req.method === 'GET' && req.url.startsWith('/ping')) {
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const mac = url.searchParams.get('mac');
-        
-        // Update Supabase with current time
-        const payload = JSON.stringify({ last_seen: new Date().toISOString() });
-        // ... use PATCH logic to update Robots where robot_address == mac ...
-    }
-
     //6. UPDATE NAME ROUTE
     if (req.method === 'POST' && req.url === '/update-robot-name') {
         let body = '';
@@ -276,6 +267,54 @@ const server = http.createServer((req, res) => {
             dbReq.write(payload);
             dbReq.end();
         });
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/ping')) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const mac = url.searchParams.get('mac');
+
+        if (!mac) {
+            res.writeHead(400);
+            res.end("Missing MAC");
+            return;
+        }
+
+        // Prepare the update payload with current timestamp
+        const payload = JSON.stringify({ 
+            last_seen: new Date().toISOString() 
+        });
+
+        const options = {
+            hostname: SUPABASE_URL,
+            // Match the robot by its unique MAC address (robot_address)
+            path: `/rest/v1/Robots?robot_address=eq.${mac}`,
+            method: 'PATCH',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            }
+        };
+
+        const dbReq = https.request(options, (dbRes) => {
+            dbRes.on('data', () => {}); // Drain response
+            dbRes.on('end', () => {
+                console.log(`Heartbeat received from ${mac}. Status: ${dbRes.statusCode}`);
+                res.writeHead(dbRes.statusCode === 204 || dbRes.statusCode === 200 ? 200 : 400);
+                res.end();
+            });
+        });
+
+        dbReq.on('error', (e) => {
+            console.error("Ping DB Error:", e);
+            res.writeHead(500);
+            res.end();
+        });
+
+        dbReq.write(payload);
+        dbReq.end();
+        return;
     }
 
     // 1. Serve your HTML files
