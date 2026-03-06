@@ -64,7 +64,7 @@
     let statusInterval;
     let port;
 
-   async function loadRobot() {
+    async function loadRobot() {
         try {
             const response = await fetch(`/get-single-robot?id=${robotId}`);
             if (!response.ok) throw new Error("Could not fetch robot data");
