@@ -2,10 +2,13 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const querystring = require('querystring');
+const { createClient } = require('@supabase/supabase-js');
 
 const PORT = process.env.PORT || 10000; 
 const SUPABASE_URL = 'ndjaicmrozhhqinpxhrq.supabase.co'; 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kamFpY21yb3poaHFpbnB4aHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDI0NjksImV4cCI6MjA4NzQ3ODQ2OX0.SvHivQJHjHMHfNBHBigRu7D6JsaLjDmpISWG1l0Ac6w';
+
+const supabase = createClient(`https://${SUPABASE_URL}`, SUPABASE_KEY);
 
 // Helper to turn the cookie string into an easy-to-use object
 function parseCookies(cookieHeader) {
@@ -22,9 +25,41 @@ function parseCookies(cookieHeader) {
     return list;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+
+    if (req.method === 'GET' && parsedUrl.pathname === '/ping') {
+        // 1. Force ID to a Number (matches Supabase 'int' type)
+        const robotIdStr = parsedUrl.searchParams.get('id');
+        const robotId = parseInt(robotIdStr);
+
+        console.log(`--- Heartbeat Received: ID ${robotId} ---`);
+
+        // 2. Perform the update with error logging
+        const { data, error } = await supabase
+            .from('Robots') // Check if your table is 'Robots' or 'robots'
+            .update({ last_seen: new Date().toISOString() })
+            .eq('id', robotId)
+            .select();
+
+        if (error) {
+            console.error("❌ SUPABASE ERROR:", error.message);
+            console.error("Details:", error.details);
+            res.writeHead(500);
+            res.end("Update Failed");
+        } else if (!data || data.length === 0) {
+            console.warn(`⚠️ NOT FOUND: No robot exists with ID ${robotId}. Check your Supabase table!`);
+            res.writeHead(404);
+            res.end("Robot ID not in Database");
+        } else {
+            console.log(`✅ SUCCESS: Robot ${robotId} is now marked Online.`);
+            res.writeHead(200);
+            res.end("Pong!");
+        }
+        return;
+    }
+
     if (req.method === 'GET' && req.url.startsWith('/get-single-robot')) {
-        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
         const id = parsedUrl.searchParams.get('id');
 
         console.log("Server searching for Robot ID:", id);
@@ -308,58 +343,8 @@ const server = http.createServer((req, res) => {
         });
     }
 
-    if (req.method === 'GET' && req.url.startsWith('/ping')) {
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const mac = url.searchParams.get('mac');
-
-        if (!mac) {
-            res.writeHead(400);
-            res.end("Missing MAC");
-            return;
-        }
-
-        // Prepare the update payload with current timestamp
-        const payload = JSON.stringify({ 
-            last_seen: new Date().toISOString() 
-        });
-
-        const options = {
-            hostname: SUPABASE_URL,
-            // Match the robot by its unique MAC address (robot_address)
-            path: `/rest/v1/Robots?robot_address=eq.${mac}`,
-            method: 'PATCH',
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-            }
-        };
-
-        const dbReq = https.request(options, (dbRes) => {
-            dbRes.on('data', () => {}); // Drain response
-            dbRes.on('end', () => {
-                console.log(`Heartbeat received from ${mac}. Status: ${dbRes.statusCode}`);
-                res.writeHead(dbRes.statusCode === 204 || dbRes.statusCode === 200 ? 200 : 400);
-                res.end();
-            });
-        });
-
-        dbReq.on('error', (e) => {
-            console.error("Ping DB Error:", e);
-            res.writeHead(500);
-            res.end();
-        });
-
-        dbReq.write(payload);
-        dbReq.end();
-        return;
-    }
-
     // 1. Serve your HTML files
     if (req.method === 'GET') {
-        // 1. Clean the URL (remove query parameters like ?id=123)
-        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
         let filePath = parsedUrl.pathname === '/' ? './index.html' : `.${parsedUrl.pathname}`;
 
         // 2. Security Check: Only allow access to dashboard/control if logged in

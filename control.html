@@ -139,19 +139,19 @@
 
     function updateOnlineStatus(lastSeenISO) {
         if (!lastSeenISO) {
-            setStatus("Offline", "#999");
+            setStatus("○ Offline", "#ff4d4d");
             return;
         }
 
-        const lastSeen = new Date(lastSeenISO);
-        const now = new Date();
+        const lastSeen = new Date(lastSeenISO).getTime();
+        const now = new Date().getTime(); // Both are now in milliseconds (UTC-friendly)
         
-        // Calculate difference in seconds
         const diffInSeconds = Math.floor((now - lastSeen) / 1000);
-        
-        // Since the robot pings every 30s, we give it a 60s "grace period"
-        const statusEl = document.querySelector('.robot-status');
-        if (diffInSeconds < 60) {
+
+        // DEBUG: Log this to your browser console (F12) to see the actual math
+        console.log(`Checking Robot ${robotId}: Last seen ${diffInSeconds}s ago`);
+
+        if (diffInSeconds < 70) { // Increased to 70s for extra safety
             setStatus("● Online", "#4CAF50");
         } else {
             setStatus("○ Offline", "#ff4d4d");
